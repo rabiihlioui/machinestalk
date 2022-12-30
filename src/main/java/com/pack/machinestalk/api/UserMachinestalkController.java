@@ -31,32 +31,10 @@ public class UserMachinestalkController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<UserMachinestalk>> getUsers() throws JsonProcessingException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/users").toUriString());
-        return ResponseEntity.created(uri).body(userMachinestalkService.findAllUsers());
-    }
-
-    /*@GetMapping("/users/gender/{type}")
-    public ResponseEntity<List<UserMachinestalk>> getUsersByGender(@PathVariable String type) throws JsonProcessingException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/users/gender/" + type).toUriString());
-        return ResponseEntity.created(uri).body(userMachinestalkServiceImpl.findByGender(type));
-    }
-
-    @GetMapping("/users/status/{type}")
-    public ResponseEntity<List<UserMachinestalk>> getUsersByStatus(@PathVariable String type) throws JsonProcessingException {
-        URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/users/status/" + type).toUriString());
-        return ResponseEntity.created(uri).body(userMachinestalkServiceImpl.findByStatus(type));
-    }*/
-
-    @GetMapping("/userstest")
     public ResponseEntity<HttpResponse> getUsers(@RequestParam Optional<String> gender,
                                                  @RequestParam Optional<String> status,
                                                  @RequestParam Optional<Integer> page,
                                                  @RequestParam Optional<Integer> size) throws InterruptedException, JsonProcessingException {
-        //TimeUnit.SECONDS.sleep(3); // just a delay to see the spinner in the LOADING phase
-        //throw new RuntimeException("Forced exception for testing");
-        System.out.println("gender " + gender + "status " + status + "page " + page + "size " + size);
-        //System.out.println("testttt " + userMachinestalkService.getUsers(gender.orElse(""), status.orElse(""), page.orElse(0), size.orElse(10)));
         return ResponseEntity.ok().body(
                 HttpResponse.builder().timestamp(LocalDateTime.now().toString())
                         .data(Map.of("page", userMachinestalkService.getUsers(gender.orElse(""), status.orElse(""), page.orElse(0), size.orElse(10))))

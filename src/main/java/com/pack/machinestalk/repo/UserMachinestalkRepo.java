@@ -12,9 +12,6 @@ import java.util.List;
 
 @Repository
 public interface UserMachinestalkRepo extends JpaRepository<UserMachinestalk, Long> {
-    List<UserMachinestalk> findAll();
-    List<UserMachinestalk> findByGender(String gender);
-    List<UserMachinestalk> findByStatus(String status);
     Page<UserMachinestalk> findAll(Pageable pageable);
     Page<UserMachinestalk> findByGenderAndStatusContaining(String gender, String status, Pageable pageable);
 }

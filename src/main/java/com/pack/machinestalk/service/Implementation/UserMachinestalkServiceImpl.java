@@ -30,58 +30,25 @@ public class UserMachinestalkServiceImpl implements UserMachinestalkService {
     @Autowired
     private UserMachinestalkRepo usersRepo;
 
-    /*@Override
-    public List<UserMachinestalk> findAllUsers() throws JsonProcessingException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-        HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
-        String jsonString = restTemplate.exchange(URL, HttpMethod.GET, entity, String.class).getBody();
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(jsonString);
-        JsonNode idNode = rootNode.path("data");
-        //System.out.println("testttt " + jsonString);
-        //System.out.println("idNode " + idNode);
-        //ResponseEntity<String> result = restTemplate.exchange(URL, HttpMethod.GET, entity, String.class);
-
-        //System.out.println("###########################################");
-        //System.out.println("Printing GET Response in String");
-        //System.out.println("###########################################");
-
-        //System.out.println(result.getBody());
-        List<UserMachinestalk> userMachinestalkList = objectMapper.readValue(idNode.toString(), new TypeReference<List<UserMachinestalk>>() {});
-        //System.out.println("studentList " + userMachinestalkList);
-        usersRepo.saveAll(userMachinestalkList);
-        return userMachinestalkList;
-        //Object[] objs = restTemplate.getForObject("https://gorest.co.in/public-api/users", Object[].class);
-        //System.out.println("Objs " + Arrays.asList(objs));
-        //return Arrays.asList(objs);
-    }*/
-
-    @Override
-    public List<UserMachinestalk> findAllUsers() throws JsonProcessingException {
-        return null;
-    }
-
-    public List<UserMachinestalk> findByGender(String type) {
-        return usersRepo.findByGender(type);
-    }
-
-    public List<UserMachinestalk> findByStatus(String type) {
-        return usersRepo.findByStatus(type);
-    }
-
     @Override
     public Page<UserMachinestalk> getUsers(String gender, String status, int page, int size) throws JsonProcessingException, InterruptedException {
-
-        List<UserMachinestalk> userMachinestalkList = findAllUsersFromUrlAndSaveThem(gender, status, page, size);
+        getNbreTotalPagesFromUrl(gender, status, page, size);
         log.info("Fetching users for page {} of size {}", page, size);
         return (!gender.isEmpty() || !status.isEmpty()) ?
                 usersRepo.findByGenderAndStatusContaining(gender, status, PageRequest.of(page, size)) :
-                usersRepo.findAll(PageRequest.of(page, 5));
+                usersRepo.findAll(PageRequest.of(page, size));
     }
 
     @Override
     public List<UserMachinestalk> findAllUsersFromUrlAndSaveThem(String gender, String status, int page, int size) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode idNode = jsonNodeResult(gender, status, page, size, "data");
+        List<UserMachinestalk> userMachinestalkList = objectMapper.readValue(idNode.toString(), new TypeReference<List<UserMachinestalk>>() {});
+        usersRepo.saveAll(userMachinestalkList);
+        return userMachinestalkList;
+    }
+
+    public JsonNode jsonNodeResult(String gender, String status, int page, int size, String rootNodePath) throws JsonProcessingException {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
         HttpEntity<String> entity = new HttpEntity<String>("parameters", headers);
@@ -89,11 +56,15 @@ public class UserMachinestalkServiceImpl implements UserMachinestalkService {
                 HttpMethod.GET, entity, String.class).getBody();
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(jsonString);
-        JsonNode idNode = rootNode.path("data");
-        List<UserMachinestalk> userMachinestalkList = objectMapper.readValue(idNode.toString(), new TypeReference<List<UserMachinestalk>>() {});
-        usersRepo.saveAll(userMachinestalkList);
-        return userMachinestalkList;
+        return rootNodePath.equals("meta") ?
+                objectMapper.readTree((objectMapper.readTree(rootNode.path(rootNodePath).toString()).path("pagination")).path("pages").toString())
+                : rootNode.path(rootNodePath);
     }
 
+    @Override
+    public int getNbreTotalPagesFromUrl(String gender, String status, int page, int size) throws JsonProcessingException {
+        JsonNode idNode = jsonNodeResult(gender, status, page, size, "meta");
+        return idNode.asInt();
+    }
 
 }
